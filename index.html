@@ -260,6 +260,59 @@ footer .arabic { color: var(--gold); }
 </section>
 
 </main>
+  <!-- Audio Upload Section -->
+<div id="upload-container">
+    <h3>Upload Audio File</h3>
+    
+    <!-- Password Input Field -->
+    <label for="upload-password">Enter Password:</label>
+    <input type="password" id="upload-password" placeholder="Enter password to unlock">
+    
+    <!-- File Input (Disabled by default) -->
+    <input type="file" id="audio-file" accept="audio/*" disabled>
+    
+    <p id="status-message" style="color: red; font-weight: bold;"></p>
+</div>
+
+<script>
+    const passwordInput = document.getElementById('upload-password');
+    const fileInput = document.getElementById('audio-file');
+    const statusMessage = document.getElementById('status-message');
+    
+    // The password you specified
+    const REQUIRED_PASSWORD = "1230";
+
+    // Listen for typing in the password field
+    passwordInput.addEventListener('input', function() {
+        if (passwordInput.value === REQUIRED_PASSWORD) {
+            fileInput.disabled = false;
+            statusMessage.style.color = "green";
+            statusMessage.textContent = "Password correct! You can now select a file.";
+        } else {
+            fileInput.disabled = true;
+            statusMessage.style.color = "red";
+            if (passwordInput.value.length > 0) {
+                statusMessage.textContent = "Incorrect password.";
+            } else {
+                statusMessage.textContent = "";
+            }
+        }
+    });
+
+    // Handle the selected file
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            statusMessage.style.color = "blue";
+            statusMessage.textContent = `Selected: ${file.name}. (Note: Static websites require backend integration to permanently save files to a server).`;
+            
+            // To do something with the file locally (e.g., play it in the browser):
+            // const audioUrl = URL.createObjectURL(file);
+            // console.log("Local audio URL:", audioUrl);
+        }
+    });
+</script>
+
 
 <footer>
   <div class="arabic">بِسْمِ اللَّهِ</div>
