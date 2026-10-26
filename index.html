@@ -260,225 +260,354 @@ footer .arabic { color: var(--gold); }
 </section>
 
 </main>
+  
+<!-- SHARED AUDIO LIBRARY -->
+<section id="audio-library">
+  <h2>🎧 Community Audio Library</h2>
+  <p>Upload recordings and listen to audio shared by others.</p>
 
+  <button id="openUpload">＋ Upload Audio</button>
+
+  <div id="uploadPanel" hidden>
+    <h3>Upload a recording</h3>
+
+    <label for="uploadPassword">Enter upload password</label>
+    <input
+      id="uploadPassword"
+      type="password"
+      placeholder="Enter password"
+      autocomplete="off"
+    />
+
+    <label for="audioFile">Choose audio file</label>
+    <input
+      id="audioFile"
+      type="file"
+      accept="audio/*"
+    />
+
+    <label for="audioTitle">Recording title</label>
+    <input
+      id="audioTitle"
+      type="text"
+      placeholder="Enter a title"
+      maxlength="100"
+    />
+
+    <button id="uploadButton">Upload recording</button>
+    <button id="cancelUpload">Cancel</button>
+    <p id="uploadStatus" role="status"></p>
+  </div>
+
+  <hr />
+  <h3>Available recordings</h3>
+  <p id="libraryStatus" role="status">Loading recordings...</p>
+  <div id="audioList"></div>
+</section>
 
 <style>
-    /* Islamic-inspired Aesthetic Styling */
-    .islamic-container {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #fcfbf7;
-        border: 2px solid #d4af37; /* Gold border */
-        border-radius: 12px;
-        padding: 25px;
-        max-width: 500px;
-        margin: 20px auto;
-        box-shadow: 0 8px 16px rgba(12, 74, 52, 0.1); /* Subtle emerald tint shadow */
-        color: #0c4a34; /* Deep emerald text */
-    }
+  #audio-library {
+    max-width: 700px;
+    margin: 25px auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    color: #222;
+    background: #f8fafc;
+    border-radius: 14px;
+  }
 
-    .islamic-title {
-        text-align: center;
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-        color: #0c4a34;
-        border-bottom: 1px dashed #d4af37;
-        padding-bottom: 10px;
-    }
+  #audio-library input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 8px 0 16px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
 
-    .form-group {
-        margin-bottom: 15px;
-    }
+  #audio-library button {
+    padding: 11px 16px;
+    margin: 5px 5px 5px 0;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #155eef;
+    color: white;
+  }
 
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
+  #audio-library button:disabled {
+    opacity: .6;
+    cursor: wait;
+  }
 
-    .islamic-input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #c2b280;
-        border-radius: 6px;
-        box-sizing: border-box;
-        background-color: #fff;
-    }
+  #audioList .audio-card {
+    padding: 15px;
+    margin: 14px 0;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    overflow-wrap: anywhere;
+  }
 
-    .islamic-input:focus {
-        outline: none;
-        border-color: #0c4a34;
-        box-shadow: 0 0 5px rgba(12, 74, 52, 0.3);
-    }
+  #audioList audio {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+  }
 
-    /* Attractive Premium Buttons */
-    .islamic-btn {
-        background: linear-gradient(135deg, #0c4a34 0%, #166e4e 100%); /* Emerald Gradient */
-        color: #ffffff;
-        border: 1px solid #d4af37; /* Gold trim */
-        padding: 12px 20px;
-        font-size: 1rem;
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .islamic-btn:hover {
-        background: linear-gradient(135deg, #166e4e 0%, #0c4a34 100%);
-        box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3); /* Gold glow on hover */
-        transform: translateY(-1px);
-    }
-
-    .islamic-btn:active {
-        transform: translateY(1px);
-    }
-
-    /* Audio Playlist Section */
-    .playlist-section {
-        margin-top: 25px;
-        border-top: 1px dashed #d4af37;
-        padding-top: 20px;
-    }
-
-    .playlist-title {
-        font-size: 1.2rem;
-        margin-bottom: 15px;
-        font-weight: bold;
-    }
-
-    .audio-item {
-        background-color: #ffffff;
-        border: 1px solid #e6dfcb;
-        border-radius: 6px;
-        padding: 12px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .audio-name {
-        font-weight: 600;
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-    }
-
-    .audio-item audio {
-        width: 100%;
-        accent-color: #0c4a34;
-    }
+  #audio-library [hidden] {
+    display: none !important;
+  }
 </style>
 
-<div class="islamic-container">
-    <div class="islamic-title">🕌 Audio Share Hub</div>
-    
-    <!-- Upload Form -->
-    <div class="form-group">
-        <label for="audioName">Audio Display Name:</label>
-        <input type="text" id="audioName" class="islamic-input" placeholder="e.g., Beautiful Quran Recitation">
-    </div>
-    
-    <div class="form-group">
-        <label for="audioFile">Select Audio File:</label>
-        <input type="file" id="audioFile" class="islamic-input" accept="audio/*">
-    </div>
-    
-    <button onclick="handleUpload()" class="islamic-btn">Upload Audio</button>
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
-    <!-- Playlist Display -->
-    <div class="playlist-section">
-        <div class="playlist-title">Listen to Uploads</div>
-        <div id="audioPlaylist"><!-- Audio items will appear here dynamically --></div>
-    </div>
-</div>
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-<script>
-    // Load existing audio tracks from browser memory when page loads
-    document.addEventListener("DOMContentLoaded", displayAudios);
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    function handleUpload() {
-        const nameInput = document.getElementById('audioName').value.trim();
-        const fileInput = document.getElementById('audioFile').files[0];
+  import {
+    getStorage,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject
+  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
 
-        if (!nameInput || !fileInput) {
-            alert("Please provide both a custom name and select an audio file.");
-            return;
-        }
+  // Replace these example values with your Firebase web app config.
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    appId: "YOUR_APP_ID"
+  };
 
-        // 1. Password Verification Requirement
-        const password = prompt("Please enter the password to upload audio:");
-        
-        if (password !== "1230") {
-            alert("Incorrect password. Upload access denied.");
-            return;
-        }
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
 
-        // 2. Process file into an accessible format (Base64 string for localStorage)
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const audioDataUrl = e.target.result;
+  const $ = id => document.getElementById(id);
 
-            const newAudio = {
-                id: Date.now(),
-                name: nameInput,
-                data: audioDataUrl
-            };
+  let currentUser = null;
+  let recordings = [];
+  let unsubscribe = null;
 
-            // Save to localStorage array
-            let currentPlaylist = JSON.parse(localStorage.getItem('islamic_playlist')) || [];
-            currentPlaylist.push(newAudio);
-            
-            try {
-                localStorage.setItem('islamic_playlist', JSON.stringify(currentPlaylist));
-                alert("Audio uploaded successfully to your browser session!");
-                
-                // Clear inputs and refresh the list
-                document.getElementById('audioName').value = '';
-                document.getElementById('audioFile').value = '';
-                displayAudios();
-            } catch (error) {
-                // localStorage has a ~5MB limit, large audio tracks might hit this limitation
-                alert("Storage limit exceeded. This file might be too large for browser memory storage.");
-            }
-        };
-        
-        reader.readAsDataURL(fileInput);
+  $("openUpload").addEventListener("click", () => {
+    $("uploadPanel").hidden = false;
+  });
+
+  $("cancelUpload").addEventListener("click", () => {
+    $("uploadPanel").hidden = true;
+    $("uploadPassword").value = "";
+    $("audioFile").value = "";
+    $("audioTitle").value = "";
+    $("uploadStatus").textContent = "";
+  });
+
+  // Sign in every visitor anonymously to establish a user identity.
+  try {
+    await signInAnonymously(auth);
+  } catch (error) {
+    $("libraryStatus").textContent =
+      "Could not connect. Check Firebase Authentication settings.";
+    console.error(error);
+  }
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
     }
 
-    function displayAudios() {
-        const playlistContainer = document.getElementById('audioPlaylist');
-        playlistContainer.innerHTML = '';
-        
-        const currentPlaylist = JSON.parse(localStorage.getItem('islamic_playlist')) || [];
+    if (!user) {
+      $("libraryStatus").textContent =
+        "Please reconnect to load the audio library.";
+      return;
+    }
 
-        if (currentPlaylist.length === 0) {
-            playlistContainer.innerHTML = '<p style="font-style: italic; color: #888; font-size:0.9rem;">No audio tracks uploaded yet.</p>';
-            return;
-        }
+    const audioQuery = query(
+      collection(db, "recordings"),
+      orderBy("createdAt", "desc")
+    );
 
-        currentPlaylist.forEach(track => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'audio-item';
-            
-            itemDiv.innerHTML = `
-                <div class="audio-name">${escapeHTML(track.name)}</div>
-                <audio controls src="${track.data}"></audio>
-            `;
-            
-            playlistContainer.appendChild(itemDiv);
+    unsubscribe = onSnapshot(audioQuery, snapshot => {
+      recordings = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      }));
+
+      renderRecordings();
+      $("libraryStatus").textContent =
+        recordings.length
+          ? `${recordings.length} recording(s) available`
+          : "No recordings yet. Be the first to upload!";
+    }, error => {
+      console.error(error);
+      $("libraryStatus").textContent =
+        "Could not load recordings. Check your Firestore rules.";
+    });
+  });
+
+  function renderRecordings() {
+    const list = $("audioList");
+    list.replaceChildren();
+
+    for (const recording of recordings) {
+      const card = document.createElement("article");
+      card.className = "audio-card";
+
+      const title = document.createElement("h4");
+      title.textContent = recording.title || "Untitled recording";
+
+      const player = document.createElement("audio");
+      player.controls = true;
+      player.preload = "none";
+      player.src = recording.audioUrl;
+
+      card.append(title, player);
+
+      const owner = document.createElement("p");
+      owner.textContent =
+        recording.ownerUid === currentUser?.uid
+          ? "Uploaded by you"
+          : "Shared recording";
+      card.append(owner);
+
+      if (recording.ownerUid === currentUser?.uid) {
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Delete my recording";
+
+        deleteButton.addEventListener("click", async () => {
+          if (!confirm("Permanently delete this recording?")) return;
+
+          deleteButton.disabled = true;
+
+          try {
+            await deleteDoc(doc(db, "recordings", recording.id));
+            await deleteObject(ref(storage, recording.storagePath));
+          } catch (error) {
+            console.error(error);
+            alert(
+              "Could not completely delete the recording. Please try again."
+            );
+            deleteButton.disabled = false;
+          }
         });
+
+        card.append(deleteButton);
+      }
+
+      list.append(card);
+    }
+  }
+
+  $("uploadButton").addEventListener("click", async () => {
+    const status = $("uploadStatus");
+    const button = $("uploadButton");
+    const file = $("audioFile").files[0];
+    const title = $("audioTitle").value.trim();
+    const password = $("uploadPassword").value;
+
+    if (!currentUser) {
+      status.textContent = "Please wait for the connection.";
+      return;
     }
 
-    // Helper to keep display input secure
-    function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g, 
-            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-        );
+    if (password !== "1230") {
+      status.textContent = "Incorrect upload password.";
+      return;
     }
+
+    if (!file) {
+      status.textContent = "Please choose an audio file.";
+      return;
+    }
+
+    // Basic client-side checks; server rules must also enforce limits.
+    if (!file.type.startsWith("audio/")) {
+      status.textContent = "Please choose a valid audio file.";
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      status.textContent = "Maximum file size is 20 MB.";
+      return;
+    }
+
+    button.disabled = true;
+    status.textContent = "Uploading...";
+
+    let uploadedPath = null;
+    let savedDocument = null;
+
+    try {
+      const fileId = crypto.randomUUID();
+      const storagePath =
+        `audio/${currentUser.uid}/${fileId}`;
+
+      const fileRef = ref(storage, storagePath);
+
+      await uploadBytes(fileRef, file, {
+        contentType: file.type
+      });
+
+      uploadedPath = storagePath;
+      const audioUrl = await getDownloadURL(fileRef);
+
+      savedDocument = await addDoc(collection(db, "recordings"), {
+        title: title || file.name,
+        audioUrl,
+        storagePath,
+        ownerUid: currentUser.uid,
+        createdAt: serverTimestamp()
+      });
+
+      status.textContent = "Audio uploaded successfully!";
+      $("uploadPassword").value = "";
+      $("audioFile").value = "";
+      $("audioTitle").value = "";
+    } catch (error) {
+      console.error(error);
+
+      // Clean up an uploaded file if saving its record failed.
+      if (uploadedPath && !savedDocument) {
+        try {
+          await deleteObject(ref(storage, uploadedPath));
+        } catch (cleanupError) {
+          console.error(cleanupError);
+        }
+      }
+
+      status.textContent =
+        "Upload failed. Check your Firebase setup and security rules.";
+    } finally {
+      button.disabled = false;
+    }
+  });
 </script>
+
+
 
 
 
