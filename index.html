@@ -260,352 +260,421 @@ footer .arabic { color: var(--gold); }
 </section>
 
 </main>
-  
-<!-- SHARED AUDIO LIBRARY -->
-<section id="audio-library">
+<!-- COMMUNITY AUDIO LIBRARY -->
+<section id="community-audio-library">
+  <style>
+    #community-audio-library {
+      max-width: 700px;
+      margin: 25px auto;
+      padding: 22px;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      color: #222;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+    }
+
+    #community-audio-library * {
+      box-sizing: border-box;
+    }
+
+    #community-audio-library .cal-input {
+      display: block;
+      width: 100%;
+      margin: 8px 0 16px;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+    }
+
+    #community-audio-library .cal-button {
+      padding: 11px 16px;
+      margin: 5px 5px 5px 0;
+      border: none;
+      border-radius: 8px;
+      background: #155eef;
+      color: white;
+      cursor: pointer;
+    }
+
+    #community-audio-library .cal-button:hover {
+      background: #1048bd;
+    }
+
+    #community-audio-library .cal-button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    #community-audio-library .cal-recording {
+      margin: 14px 0;
+      padding: 15px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    #community-audio-library .cal-player {
+      display: block;
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    #community-audio-library .cal-status {
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    #community-audio-library [hidden] {
+      display: none !important;
+    }
+  </style>
+
   <h2>🎧 Community Audio Library</h2>
-  <p>Upload recordings and listen to audio shared by others.</p>
+  <p>Upload recordings and listen to audio shared by the community.</p>
 
-  <button id="openUpload">＋ Upload Audio</button>
+  <button
+    type="button"
+    class="cal-button"
+    id="cal-open-upload"
+  >＋ Upload Audio</button>
 
-  <div id="uploadPanel" hidden>
+  <div id="cal-upload-panel" hidden>
     <h3>Upload a recording</h3>
 
-    <label for="uploadPassword">Enter upload password</label>
+    <label for="cal-password">Upload password</label>
     <input
-      id="uploadPassword"
+      class="cal-input"
+      id="cal-password"
       type="password"
-      placeholder="Enter password"
+      placeholder="Enter upload password"
       autocomplete="off"
-    />
+    >
 
-    <label for="audioFile">Choose audio file</label>
+    <label for="cal-file">Choose audio file</label>
     <input
-      id="audioFile"
+      class="cal-input"
+      id="cal-file"
       type="file"
       accept="audio/*"
-    />
+    >
 
-    <label for="audioTitle">Recording title</label>
+    <label for="cal-title">Recording title</label>
     <input
-      id="audioTitle"
+      class="cal-input"
+      id="cal-title"
       type="text"
-      placeholder="Enter a title"
       maxlength="100"
-    />
+      placeholder="Enter recording title"
+    >
 
-    <button id="uploadButton">Upload recording</button>
-    <button id="cancelUpload">Cancel</button>
-    <p id="uploadStatus" role="status"></p>
+    <button
+      type="button"
+      class="cal-button"
+      id="cal-upload"
+    >Upload Recording</button>
+
+    <button
+      type="button"
+      class="cal-button"
+      id="cal-cancel"
+      style="background:#64748b"
+    >Cancel</button>
+
+    <p class="cal-status" id="cal-upload-status" role="status"></p>
   </div>
 
-  <hr />
+  <hr>
+
   <h3>Available recordings</h3>
-  <p id="libraryStatus" role="status">Loading recordings...</p>
-  <div id="audioList"></div>
-</section>
+  <p class="cal-status" id="cal-library-status" role="status">
+    Connecting to audio library...
+  </p>
 
-<style>
-  #audio-library {
-    max-width: 700px;
-    margin: 25px auto;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    color: #222;
-    background: #f8fafc;
-    border-radius: 14px;
-  }
+  <div id="cal-recording-list"></div>
 
-  #audio-library input {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    margin: 8px 0 16px;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
+  <script type="module">
+    import { initializeApp, getApp, getApps }
+      from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
-  #audio-library button {
-    padding: 11px 16px;
-    margin: 5px 5px 5px 0;
-    border: 0;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #155eef;
-    color: white;
-  }
+    import {
+      getAuth,
+      signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-  #audio-library button:disabled {
-    opacity: .6;
-    cursor: wait;
-  }
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      deleteDoc,
+      doc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-  #audioList .audio-card {
-    padding: 15px;
-    margin: 14px 0;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    background: white;
-    overflow-wrap: anywhere;
-  }
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL,
+      deleteObject
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
 
-  #audioList audio {
-    display: block;
-    width: 100%;
-    margin-top: 12px;
-  }
+    (() => {
+      const root = document.getElementById("community-audio-library");
+      if (!root || root.dataset.initialized === "true") return;
+      root.dataset.initialized = "true";
 
-  #audio-library [hidden] {
-    display: none !important;
-  }
-</style>
+      const $ = id => root.querySelector("#" + id);
 
-<script type="module">
-  import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+      // IMPORTANT:
+      // Insert your real Firebase web app configuration here.
+      // If your existing website already initializes Firebase,
+      // reuse that same app instead of creating a second one.
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        appId: "YOUR_APP_ID"
+      };
 
-  import {
-    getAuth,
-    signInAnonymously,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+      const UPLOAD_PASSWORD = "1230";
+      const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    deleteDoc,
-    doc,
-    onSnapshot,
-    query,
-    orderBy,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+      let auth, db, storage, currentUser;
+      let unsubscribe = null;
+      let busy = false;
 
-  import {
-    getStorage,
-    ref,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject
-  } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
+      $("cal-open-upload").addEventListener("click", () => {
+        $("cal-upload-panel").hidden = false;
+      });
 
-  // Replace these example values with your Firebase web app config.
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    appId: "YOUR_APP_ID"
-  };
+      $("cal-cancel").addEventListener("click", () => {
+        if (busy) return;
+        $("cal-upload-panel").hidden = true;
+        $("cal-password").value = "";
+        $("cal-file").value = "";
+        $("cal-title").value = "";
+        $("cal-upload-status").textContent = "";
+      });
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-
-  const $ = id => document.getElementById(id);
-
-  let currentUser = null;
-  let recordings = [];
-  let unsubscribe = null;
-
-  $("openUpload").addEventListener("click", () => {
-    $("uploadPanel").hidden = false;
-  });
-
-  $("cancelUpload").addEventListener("click", () => {
-    $("uploadPanel").hidden = true;
-    $("uploadPassword").value = "";
-    $("audioFile").value = "";
-    $("audioTitle").value = "";
-    $("uploadStatus").textContent = "";
-  });
-
-  // Sign in every visitor anonymously to establish a user identity.
-  try {
-    await signInAnonymously(auth);
-  } catch (error) {
-    $("libraryStatus").textContent =
-      "Could not connect. Check Firebase Authentication settings.";
-    console.error(error);
-  }
-
-  onAuthStateChanged(auth, user => {
-    currentUser = user;
-
-    if (unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
-    }
-
-    if (!user) {
-      $("libraryStatus").textContent =
-        "Please reconnect to load the audio library.";
-      return;
-    }
-
-    const audioQuery = query(
-      collection(db, "recordings"),
-      orderBy("createdAt", "desc")
-    );
-
-    unsubscribe = onSnapshot(audioQuery, snapshot => {
-      recordings = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-      }));
-
-      renderRecordings();
-      $("libraryStatus").textContent =
-        recordings.length
-          ? `${recordings.length} recording(s) available`
-          : "No recordings yet. Be the first to upload!";
-    }, error => {
-      console.error(error);
-      $("libraryStatus").textContent =
-        "Could not load recordings. Check your Firestore rules.";
-    });
-  });
-
-  function renderRecordings() {
-    const list = $("audioList");
-    list.replaceChildren();
-
-    for (const recording of recordings) {
-      const card = document.createElement("article");
-      card.className = "audio-card";
-
-      const title = document.createElement("h4");
-      title.textContent = recording.title || "Untitled recording";
-
-      const player = document.createElement("audio");
-      player.controls = true;
-      player.preload = "none";
-      player.src = recording.audioUrl;
-
-      card.append(title, player);
-
-      const owner = document.createElement("p");
-      owner.textContent =
-        recording.ownerUid === currentUser?.uid
-          ? "Uploaded by you"
-          : "Shared recording";
-      card.append(owner);
-
-      if (recording.ownerUid === currentUser?.uid) {
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete my recording";
-
-        deleteButton.addEventListener("click", async () => {
-          if (!confirm("Permanently delete this recording?")) return;
-
-          deleteButton.disabled = true;
-
-          try {
-            await deleteDoc(doc(db, "recordings", recording.id));
-            await deleteObject(ref(storage, recording.storagePath));
-          } catch (error) {
-            console.error(error);
-            alert(
-              "Could not completely delete the recording. Please try again."
-            );
-            deleteButton.disabled = false;
-          }
-        });
-
-        card.append(deleteButton);
+      function showError(prefix, error) {
+        console.error(prefix, error);
+        $("cal-library-status").textContent =
+          prefix + " " + (error.code || "") + " " +
+          (error.message || "");
       }
 
-      list.append(card);
-    }
-  }
+      function renderRecordings(snapshot) {
+        const list = $("cal-recording-list");
+        list.replaceChildren();
 
-  $("uploadButton").addEventListener("click", async () => {
-    const status = $("uploadStatus");
-    const button = $("uploadButton");
-    const file = $("audioFile").files[0];
-    const title = $("audioTitle").value.trim();
-    const password = $("uploadPassword").value;
+        snapshot.forEach(item => {
+          const recording = item.data();
+          const card = document.createElement("article");
+          card.className = "cal-recording";
 
-    if (!currentUser) {
-      status.textContent = "Please wait for the connection.";
-      return;
-    }
+          const heading = document.createElement("h4");
+          heading.textContent = recording.title || "Untitled recording";
 
-    if (password !== "1230") {
-      status.textContent = "Incorrect upload password.";
-      return;
-    }
+          const player = document.createElement("audio");
+          player.className = "cal-player";
+          player.controls = true;
+          player.preload = "none";
+          player.src = recording.audioUrl;
 
-    if (!file) {
-      status.textContent = "Please choose an audio file.";
-      return;
-    }
+          const owner = document.createElement("p");
+          owner.textContent =
+            recording.ownerUid === currentUser?.uid
+              ? "Uploaded by you"
+              : "Shared recording";
 
-    // Basic client-side checks; server rules must also enforce limits.
-    if (!file.type.startsWith("audio/")) {
-      status.textContent = "Please choose a valid audio file.";
-      return;
-    }
+          card.append(heading, player, owner);
 
-    if (file.size > 20 * 1024 * 1024) {
-      status.textContent = "Maximum file size is 20 MB.";
-      return;
-    }
+          if (recording.ownerUid === currentUser?.uid) {
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "cal-button";
+            remove.textContent = "Delete my recording";
 
-    button.disabled = true;
-    status.textContent = "Uploading...";
+            remove.addEventListener("click", async () => {
+              if (!confirm("Permanently delete this recording?")) return;
 
-    let uploadedPath = null;
-    let savedDocument = null;
+              remove.disabled = true;
 
-    try {
-      const fileId = crypto.randomUUID();
-      const storagePath =
-        `audio/${currentUser.uid}/${fileId}`;
+              try {
+                await deleteObject(ref(storage, recording.storagePath));
+                await deleteDoc(doc(db, "recordings", item.id));
+              } catch (error) {
+                console.error("Delete error:", error);
+                alert("Delete failed: " + error.message);
+                remove.disabled = false;
+              }
+            });
 
-      const fileRef = ref(storage, storagePath);
+            card.append(remove);
+          }
 
-      await uploadBytes(fileRef, file, {
-        contentType: file.type
-      });
+          list.append(card);
+        });
+      }
 
-      uploadedPath = storagePath;
-      const audioUrl = await getDownloadURL(fileRef);
-
-      savedDocument = await addDoc(collection(db, "recordings"), {
-        title: title || file.name,
-        audioUrl,
-        storagePath,
-        ownerUid: currentUser.uid,
-        createdAt: serverTimestamp()
-      });
-
-      status.textContent = "Audio uploaded successfully!";
-      $("uploadPassword").value = "";
-      $("audioFile").value = "";
-      $("audioTitle").value = "";
-    } catch (error) {
-      console.error(error);
-
-      // Clean up an uploaded file if saving its record failed.
-      if (uploadedPath && !savedDocument) {
+      async function initializeLibrary() {
         try {
-          await deleteObject(ref(storage, uploadedPath));
-        } catch (cleanupError) {
-          console.error(cleanupError);
+          const configIncomplete =
+            !firebaseConfig.apiKey ||
+            firebaseConfig.apiKey === "YOUR_API_KEY" ||
+            firebaseConfig.projectId === "YOUR_PROJECT_ID" ||
+            firebaseConfig.appId === "YOUR_APP_ID";
+
+          if (configIncomplete) {
+            $("cal-library-status").textContent =
+              "Setup required: add your Firebase web app configuration.";
+            return;
+          }
+
+          const app = getApps().length
+            ? getApp()
+            : initializeApp(firebaseConfig);
+
+          auth = getAuth(app);
+          db = getFirestore(app);
+          storage = getStorage(app);
+
+          await signInAnonymously(auth);
+          currentUser = auth.currentUser;
+
+          if (!currentUser) {
+            throw new Error("Anonymous sign-in did not return a user.");
+          }
+
+          const audioQuery = query(
+            collection(db, "recordings"),
+            orderBy("createdAt", "desc")
+          );
+
+          unsubscribe = onSnapshot(
+            audioQuery,
+            snapshot => {
+              renderRecordings(snapshot);
+              $("cal-library-status").textContent =
+                snapshot.empty
+                  ? "No recordings yet. Be the first to upload!"
+                  : snapshot.size + " recording(s) available";
+            },
+            error => showError("Unable to load recordings:", error)
+          );
+        } catch (error) {
+          showError("Firebase setup failed:", error);
         }
       }
 
-      status.textContent =
-        "Upload failed. Check your Firebase setup and security rules.";
-    } finally {
-      button.disabled = false;
-    }
-  });
-</script>
+      $("cal-upload").addEventListener("click", async () => {
+        if (busy) return;
+
+        const status = $("cal-upload-status");
+        const button = $("cal-upload");
+        const file = $("cal-file").files[0];
+        const title = $("cal-title").value.trim();
+
+        if (!currentUser) {
+          status.textContent =
+            "Firebase is not connected. Check the setup message above.";
+          return;
+        }
+
+        if ($("cal-password").value !== UPLOAD_PASSWORD) {
+          status.textContent = "Incorrect upload password.";
+          return;
+        }
+
+        if (!file) {
+          status.textContent = "Please select an audio file.";
+          return;
+        }
+
+        if (!file.type.startsWith("audio/")) {
+          status.textContent = "Please select a valid audio file.";
+          return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          status.textContent = "Maximum file size is 20 MB.";
+          return;
+        }
+
+        busy = true;
+        button.disabled = true;
+        status.textContent = "Uploading audio...";
+
+        let path = null;
+        let documentSaved = false;
+
+        try {
+          const fileId = crypto.randomUUID();
+          path = `audio/${currentUser.uid}/${fileId}`;
+
+          const fileRef = ref(storage, path);
+
+          await uploadBytes(fileRef, file, {
+            contentType: file.type
+          });
+
+          const audioUrl = await getDownloadURL(fileRef);
+
+          await addDoc(collection(db, "recordings"), {
+            title: title || file.name,
+            audioUrl,
+            storagePath: path,
+            ownerUid: currentUser.uid,
+            createdAt: serverTimestamp()
+          });
+
+          documentSaved = true;
+          status.textContent = "Audio uploaded successfully!";
+
+          $("cal-password").value = "";
+          $("cal-file").value = "";
+          $("cal-title").value = "";
+        } catch (error) {
+          console.error("Upload error:", error);
+
+          if (path && !documentSaved) {
+            try {
+              await deleteObject(ref(storage, path));
+            } catch (cleanupError) {
+              console.error("Cleanup failed:", cleanupError);
+            }
+          }
+
+          status.textContent =
+            "Upload failed: " +
+            (error.code || error.name || "Error") +
+            " — " + error.message;
+        } finally {
+          busy = false;
+          button.disabled = false;
+        }
+      });
+
+      initializeLibrary();
+
+      // Clean up the live database listener if the component is removed.
+      window.addEventListener("pagehide", () => {
+        if (unsubscribe) unsubscribe();
+      }, { once: true });
+    })();
+  </script>
+</section>
+<!-- END COMMUNITY AUDIO LIBRARY -->
+  
+
 
 
 
